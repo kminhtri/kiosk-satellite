@@ -9802,6 +9802,14 @@ class UiStringsZh extends UiStrings {
   String get settingScreensaverClockAmPmDescription => '在时间后显示 AM 或 PM。';
 
   @override
+  String get settingScreensaverClockNightScreenOffTitle =>
+      'Turn screen off at night';
+
+  @override
+  String get settingScreensaverClockNightScreenOffDescription =>
+      'Power off the display after 30 seconds in Night mode. Wake normally to use the dashboard; the clock returns when the room brightens. Requires Device admin permission.';
+
+  @override
   String get screensaverOverlayEntity => '实体';
 
   @override
@@ -23624,6 +23632,14 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingScreensaverClockAmPmDescription => '在时间后显示 AM 或 PM。';
+
+  @override
+  String get settingScreensaverClockNightScreenOffTitle =>
+      'Turn screen off at night';
+
+  @override
+  String get settingScreensaverClockNightScreenOffDescription =>
+      'Power off the display after 30 seconds in Night mode. Wake normally to use the dashboard; the clock returns when the room brightens. Requires Device admin permission.';
 
   @override
   String get screensaverOverlayEntity => '实体';

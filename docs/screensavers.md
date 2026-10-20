@@ -85,6 +85,7 @@ Changes apply live while the clock is running, and writing an empty value clears
 | --- | --- |
 | Night mode | Disabled by default. |
 | Light level | Configurable from 1 to 100 lx (5 lx by default). The clock transitions to night mode at or below this ambient threshold and returns to normal slightly above it to prevent color flickering. |
+| Turn screen off at night | Off by default. After 30 seconds in Night mode, powers off the physical display instead of leaving the clock lit. Uses the same Light level and hysteresis. Requires Device admin permission. |
 | Night color | Sets the accent color for digits, dates, At a Glance elements, and corner widgets (muted red by default). |
 | Night background | Sets the background display color in dark environments (pure black by default) to eliminate panel glow. |
 | Hide background photo | Disabled by default. Hides the photo while Night mode is active so the clock uses the Night background color. Works with every clock face and restores the photo when the room brightens. Changes apply immediately. |
@@ -92,6 +93,10 @@ Changes apply live while the clock is running, and writing an empty value clears
 | Night card color | Flip Clock face only. Sets the card color in the dark (near-black by default). |
 
 **Let alarms take over** (on by default) makes a ringing [alarm](alarms.md) show on the Clock screensaver in its own style: the date line becomes the alarm's label and Snooze and Stop come in under the clock in the clock's colors, Night mode included. Turn it off to ring on the alarm's own screen instead.
+
+With **Turn screen off at night** enabled, the policy applies only while the Clock screensaver is active, including when selected by a schedule. It never turns off the dashboard, another app, a voice conversation, an alarm, or the Now Playing view. Normal wake and dismissal controls still work. A wake that keeps the screensaver visible gets a fresh 30 seconds before it powers off again.
+
+When a new sensor reading leaves Night mode (above 125% of Light level), the clock returns automatically only if this option powered the panel off. Disabling the option or Night mode restores that panel too; a panel switched off manually or by **Turn screen off after** stays off. Automatic daylight wake depends on the device continuing to report ambient light with its display off. A missing sensor reading does not count as darkness. Permission failures are logged without opening a permission prompt at night.
 
 ### Home Assistant Media
 

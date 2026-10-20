@@ -2284,4 +2284,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingKioskAllowCalendarTitle",
     "description": "settingKioskAllowCalendarDescription",
   },
+  "screensaver.clock_night_screen_off": {
+    "title": "settingScreensaverClockNightScreenOffTitle",
+    "description": "settingScreensaverClockNightScreenOffDescription",
+  },
 };

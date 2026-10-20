@@ -3267,6 +3267,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverClockAmPmTitle,
       'settingScreensaverClockAmPmDescription' =>
         strings.settingScreensaverClockAmPmDescription,
+      'settingScreensaverClockNightScreenOffTitle' =>
+        strings.settingScreensaverClockNightScreenOffTitle,
+      'settingScreensaverClockNightScreenOffDescription' =>
+        strings.settingScreensaverClockNightScreenOffDescription,
       'screensaverOverlayEntity' => strings.screensaverOverlayEntity,
       'screensaverOverlayNotSet' => strings.screensaverOverlayNotSet,
       'screensaverOverlayName' => strings.screensaverOverlayName,

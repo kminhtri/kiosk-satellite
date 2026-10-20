@@ -39072,6 +39072,32 @@
       ]
     }
   },
+  "settingScreensaverClockNightScreenOffTitle": "Turn screen off at night",
+  "@settingScreensaverClockNightScreenOffTitle": {
+    "context": "Settings:Screensaver:Clock screensaver:Night mode",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Clock screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Clock screensaver"
+      ]
+    }
+  },
+  "settingScreensaverClockNightScreenOffDescription": "Power off the display after 30 seconds in Night mode. Wake normally to use the dashboard; the clock returns when the room brightens. Requires Device admin permission.",
+  "@settingScreensaverClockNightScreenOffDescription": {
+    "context": "Settings:Screensaver:Clock screensaver:Night mode",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Clock screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Clock screensaver"
+      ]
+    }
+  },
   "screensaverOverlayEntity": "Entiteit",
   "@screensaverOverlayEntity": {
     "context": "Settings > Screensaver > Widgets > Entity widget or At a Glance > Entities",

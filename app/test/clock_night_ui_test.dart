@@ -91,6 +91,7 @@ void main() {
       expect(find.text('Night color'), findsOneWidget);
       expect(find.text('Hide background photo'), findsOneWidget);
       expect(find.text('Hide widgets and At a Glance'), findsOneWidget);
+      expect(find.text('Turn screen off at night'), findsOneWidget);
     });
 
     testWidgets('off, the group is just the switch', (tester) async {
@@ -102,6 +103,7 @@ void main() {
       expect(find.text('Night card color'), findsNothing);
       expect(find.text('Hide background photo'), findsNothing);
       expect(find.text('Hide widgets and At a Glance'), findsNothing);
+      expect(find.text('Turn screen off at night'), findsNothing);
     });
 
     testWidgets('the card color needs the switch AND the Flip style', (

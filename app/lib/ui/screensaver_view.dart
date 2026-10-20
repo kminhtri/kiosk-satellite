@@ -46,6 +46,7 @@ import '../managers/camera/models.dart'
     show CameraViewConfig, decodeCameraViewIds;
 import '../managers/device/haptics.dart';
 import '../managers/screensaver/photo_metadata.dart';
+import '../managers/screensaver/clock_night.dart';
 import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/settings/settings_manager.dart';
@@ -65,26 +66,7 @@ import 'video_surface.dart';
 import 'webview_server_trust.dart';
 
 export 'photo_frames.dart' show photoCovers;
-
-/// The Night mode decision (issue #391): whether the clock wears its night
-/// color, given the last decision.
-///
-/// Entering at the threshold but leaving only a quarter above it keeps a
-/// reading hovering on the line from flickering the color back and forth:
-/// the sensor's native damper spaces events out, it does not steady them.
-/// A null [lux] is a sensor that has not spoken and has no persisted last
-/// reading, which cannot claim the room is dark.
-bool clockNightActive({
-  required bool previous,
-  required bool enabled,
-  required double? lux,
-  required double threshold,
-}) {
-  if (!enabled || lux == null) return false;
-  if (lux <= threshold) return true;
-  if (lux > threshold * 1.25) return false;
-  return previous;
-}
+export '../managers/screensaver/clock_night.dart' show clockNightActive;
 
 /// The screensaver overlay: whichever of the four views the manager says is
 /// active, or nothing.

@@ -17921,6 +17921,18 @@ abstract class UiStrings {
   /// **'Add AM or PM after the time.'**
   String get settingScreensaverClockAmPmDescription;
 
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn screen off at night'**
+  String get settingScreensaverClockNightScreenOffTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Power off the display after 30 seconds in Night mode. Wake normally to use the dashboard; the clock returns when the room brightens. Requires Device admin permission.'**
+  String get settingScreensaverClockNightScreenOffDescription;
+
   /// Label or guidance in this editor.
   ///
   /// In en, this message translates to:

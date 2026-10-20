@@ -10289,6 +10289,14 @@ class UiStringsEn extends UiStrings {
       'Add AM or PM after the time.';
 
   @override
+  String get settingScreensaverClockNightScreenOffTitle =>
+      'Turn screen off at night';
+
+  @override
+  String get settingScreensaverClockNightScreenOffDescription =>
+      'Power off the display after 30 seconds in Night mode. Wake normally to use the dashboard; the clock returns when the room brightens. Requires Device admin permission.';
+
+  @override
   String get screensaverOverlayEntity => 'Entity';
 
   @override

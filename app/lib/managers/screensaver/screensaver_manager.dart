@@ -12,6 +12,7 @@ import '../camera/models.dart' show encodeCameraViewIds;
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'screensaver_widgets.dart';
+import 'clock_night.dart';
 
 /// A slideshow's hand on its own deck: a positive [direction] shows the
 /// next slide, a negative one the slide before, either way restarting the
@@ -144,7 +145,7 @@ Map<String, Object?>? activeScheduleEntry(
 /// commands so this manager never references the screen manager. The
 /// screensaver's black stays brightness zero behind an overlay (the app
 /// alive, motion and wake word running); real display power-off happens in
-/// exactly one place, the "Turn screen off after" timer, and by explicit
+/// the "Turn screen off after" timer, Clock Night mode, and by explicit
 /// request — with background listening on, the process (and its camera,
 /// carried by the camera-type foreground service) keeps running behind the
 /// dark panel, so motion, the ESPHome dismiss and the wake word can all light
@@ -158,6 +159,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     this._settings, {
     this._screenOffUnit = const Duration(minutes: 1),
     this._pauseProbeDelay = const Duration(seconds: 1),
+    this._nightScreenOffDelay = const Duration(seconds: 30),
   });
 
   final SettingsManager _settings;
@@ -179,6 +181,86 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   /// One real minute, injectable for tests only.
   final Duration _screenOffUnit;
+
+  /// A fresh viewing period after every wake that keeps the clock up.
+  /// Separate from the normal timer so daylight does not change its delay.
+  final Duration _nightScreenOffDelay;
+  Timer? _nightScreenOffTimer;
+  StreamSubscription<LightLevelChanged>? _nightLightSub;
+  double? _nightLux;
+  bool _night = false;
+  bool _nightPoweredOff = false;
+  bool _nightPowerOffPending = false;
+  int _nightWakeGeneration = 0;
+
+  bool get _nightScreenOffRequested =>
+      _effectiveMode == 'clock' &&
+      _night &&
+      _settings.get(defs.screensaverClockNight) &&
+      _settings.get(defs.screensaverClockNightScreenOff);
+
+  bool get _nightScreenOffAllowed =>
+      _active &&
+      _nightScreenOffRequested &&
+      !_behindAnotherApp &&
+      !_paused &&
+      !_voiceTurn &&
+      !_assistOverlay &&
+      !_nowPlayingTakeover &&
+      alarmTakeover.value == null;
+
+  void _cancelNightScreenOff() {
+    _nightScreenOffTimer?.cancel();
+    _nightScreenOffTimer = null;
+  }
+
+  void _syncNightScreenOff() {
+    _night = clockNightActive(
+      previous: _night,
+      enabled: _settings.get(defs.screensaverClockNight),
+      lux: _nightLux,
+      threshold: _settings.get(defs.screensaverClockNightLux).toDouble(),
+    );
+    // Only undo a power-off this policy owns. Daylight must not wake a
+    // panel switched off manually or by the ordinary screen-off timer.
+    if (_active && _nightPoweredOff && !_nightScreenOffRequested) {
+      _nightPoweredOff = false;
+      unawaited(commands.execute('screenOn', const {}));
+    }
+    if (!_nightScreenOffAllowed || _screenDark) {
+      _cancelNightScreenOff();
+      return;
+    }
+    if (_nightScreenOffTimer != null || _nightPowerOffPending) return;
+    _nightScreenOffTimer = Timer(_nightScreenOffDelay, () async {
+      _nightScreenOffTimer = null;
+      if (!_nightScreenOffAllowed || _screenDark) return;
+      final generation = _nightWakeGeneration;
+      _nightPowerOffPending = true;
+      final result = await commands.execute('screenOff', const {
+        'prompt': false,
+      });
+      _nightPowerOffPending = false;
+      if (!result.ok) {
+        log.warn(
+          name,
+          'could not power the panel off at night: ${result.error}',
+        );
+        return;
+      }
+      // Dismissal, daylight or an alarm can arrive while the command is
+      // awaiting Android. Never leave that newer interaction in the dark.
+      if (!_nightScreenOffAllowed || generation != _nightWakeGeneration) {
+        await commands.execute('screenOn', const {});
+        return;
+      }
+      _nightPoweredOff = true;
+      _panelDark = true;
+      _screenOffTimer?.cancel();
+      _screenOffTimer = null;
+      log.info(name, 'Night mode: powered the panel off');
+    });
+  }
 
   /// The minutes the running countdown was armed with, so a schedule
   /// boundary or a slider move re-arms only when the effective value
@@ -375,6 +457,14 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     await _migrateMiniClock24h();
     await _migrateMiniClockWidget();
     await _migrateCameraView();
+    final light = (await commands.execute('getLightLevel', const {})).data;
+    if (light is Map && light['present'] == true && light['lux'] is num) {
+      _nightLux = (light['lux'] as num).toDouble();
+    }
+    _nightLightSub = bus.on<LightLevelChanged>().listen((e) {
+      _nightLux = e.lux;
+      _syncNightScreenOff();
+    });
     if (Platform.isAndroid) WidgetsBinding.instance.addObserver(this);
     bus.on<ActivityDetected>().listen((e) => notifyActivity(e.source));
     // Stand down while a page interaction runs (voice turn, ringing timer
@@ -385,6 +475,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // still observe its playback interaction.
       if (e.source == InteractionSource.sendspin && e.reason == 'media') return;
       _paused = _interactions.update(e);
+      _syncNightScreenOff();
       // The native satellite's overlay draws over the screensaver, full
       // screen or docked.
       if (_paused && e.source != InteractionSource.native) {
@@ -403,6 +494,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
               (event.pauses && !_cheapUnderDock.contains(activeView.value)));
       if (event.visible == _assistOverlay) return;
       _assistOverlay = event.visible;
+      _syncNightScreenOff();
       if (event.visible) {
         _cancelIdleTimer();
         if (_active) {
@@ -433,6 +525,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // spoken reply, and the screensaver could reappear mid-conversation.
     bus.on<WakeWordDetected>().listen((_) {
       _voiceTurn = true;
+      _syncNightScreenOff();
       if (_active && !_nativeVoice) {
         log.debug(name, 'dismissed by wake word');
         _stopForInteraction();
@@ -445,6 +538,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     bus.on<WakeWordStateChanged>().listen((e) {
       if (e.active && _voiceTurn) {
         _voiceTurn = false;
+        _syncNightScreenOff();
         _resetIdleTimer();
         unawaited(_restoreAfterInteraction());
       }
@@ -477,11 +571,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       }
       if (!e.on) {
         _panelDark = true;
+        _cancelNightScreenOff();
         _screenOffTimer?.cancel();
         _screenOffTimer = null;
         return;
       }
       _panelDark = false;
+      _nightPoweredOff = false;
+      _nightWakeGeneration++;
+      _cancelNightScreenOff();
       if (byHand && !_wakesToScreensaver('power')) {
         notifyActivity('screen on');
         return;
@@ -492,6 +590,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       } else {
         _armScreenOffTimer();
       }
+      _syncNightScreenOff();
     });
     bus.on<NotificationsChanged>().listen((e) {
       unawaited(_onNotificationsChanged(e.showing));
@@ -660,6 +759,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       notifyActivity('proximity');
     });
     bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.screensaverClockNight.key ||
+          e.key == defs.screensaverClockNightLux.key ||
+          e.key == defs.screensaverClockNightScreenOff.key) {
+        _syncNightScreenOff();
+      }
       // The saved brightness is the session's own bookkeeping, written
       // as it starts and stops: re-arming on it put a due moment on the
       // wire in the middle of every start (issue #406).
@@ -1675,6 +1779,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// brightness. Shared layouts follow the screensaver's brightness unless
   /// their brightness override is enabled.
   Future<void> _applyVisuals() async {
+    _syncNightScreenOff();
     final mode = _effectiveMode;
     final entry = _scheduleEntry;
     _appliedScheduleAt = entry?['at'] as String?;
@@ -1838,6 +1943,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     if (!_active) return;
     final nowPlaying = _nowPlayingSession;
     _active = false;
+    _nightWakeGeneration++;
+    _cancelNightScreenOff();
+    _nightPoweredOff = false;
     _startedForNowPlaying = false;
     alarmTakeover.value = null;
     renderPaused.value = false;
@@ -1948,6 +2056,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   @override
   Future<void> dispose() async {
+    _cancelNightScreenOff();
+    await _nightLightSub?.cancel();
     if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
     _pauseProbe?.cancel();
     _idleTimer?.cancel();

@@ -2282,5 +2282,9 @@
   "kiosk.allow_calendar": {
     "title": "settingKioskAllowCalendarTitle",
     "description": "settingKioskAllowCalendarDescription"
+  },
+  "screensaver.clock_night_screen_off": {
+    "title": "settingScreensaverClockNightScreenOffTitle",
+    "description": "settingScreensaverClockNightScreenOffDescription"
   }
 }

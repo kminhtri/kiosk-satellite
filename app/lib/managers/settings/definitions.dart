@@ -3007,6 +3007,21 @@ const screensaverClockNightColor = SettingDef<String>(
   dependsOn: 'screensaver.clock_night',
 );
 
+const screensaverClockNightScreenOff = SettingDef<bool>(
+  key: 'screensaver.clock_night_screen_off',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Turn screen off at night',
+  description:
+      'Power off the display after 30 seconds in Night mode. Wake normally to '
+      'use the dashboard; the clock returns when the room brightens. Requires '
+      'Device admin permission.',
+  category: 'Screensaver',
+  section: 'Night mode',
+  subpage: 'Clock screensaver',
+  dependsOn: 'screensaver.clock_night',
+);
+
 // The backdrop in the dark, pure black by default: a face tuned for a lit
 // room (an inverted e-ink pair, the flip clock's shaded wall) should not
 // keep glowing at night. Takes the whole screen behind any face; the flip
@@ -12151,6 +12166,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverClockNight,
   screensaverClockNightLux,
   screensaverClockNightColor,
+  screensaverClockNightScreenOff,
   screensaverClockNightBgColor,
   screensaverClockNightHideBackground,
   screensaverClockNightHideWidgets,
